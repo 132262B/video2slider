@@ -79,6 +79,7 @@ def transcribe_audio(client: Groq, audio_bytes: bytes) -> str:
     # Transcribe the audio using bytes (filename is required by API but can be any value)
     transcription = client.audio.transcriptions.create(
         file=("audio.mp3", audio_bytes),
+        prompt="한국어를 기본으로 분석하되 한국어로 적지 않아도 되는 영어 단어는 영어로 표현해주세요.",
         model="whisper-large-v3-turbo",
         response_format="verbose_json",
         language="ko",  # Change this if needed
