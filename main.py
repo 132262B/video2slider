@@ -8,19 +8,28 @@ from dotenv import load_dotenv
 # .env 파일에서 환경 변수 로드
 load_dotenv()
 
+SYSTEM_PROMPT = """
+당신은 텍스트를 Marp 형태의 프레젠테이션 슬라이드로 변환하는 전문가입니다.
+현재 기업에 중요한 PPT를 빠르게 생성해야합니다.
+
+요구사항:
+- Frontmatter에 marp: true, paginate 등을 설정하세요.
+- 내용을 논리적으로 구조화하고, 일목요연하게 정리하여 여러 슬라이드로 나누세요.
+- 순수 Marp 마크다운만 반환하고, 다른 설명은 포함하지 마세요.
+- 각 슬라이드는 명확한 제목과 핵심 내용을 포함해야 합니다.
+- 필요한 경우 코드 블록, 리스트, 표 등을 활용하세요.
+- 첫페이지는 메인 타이틀, 두번째는 목차가 꼭 들어가야해.
+- 마지막에는 요약과 끝맽음이 각각 한페이지식 들어가야해.
+- 이모지를 사용하지 마세요.
+- 없는 내용에 대해서 임의로 작성하지 마세요.
+"""
+
+
 def read_result_txt() -> str:
     """result/result.txt 파일을 읽어서 텍스트를 반환합니다."""
     file_path: str = "result/result.txt"
     with open(file_path, "r", encoding="utf-8") as f:
         return f.read()
-
-
-def read_marp_guide() -> str:
-    """result/marp_guide.md 파일을 읽어서 Marp 가이드를 반환합니다."""
-    file_path: str = "result/marp_guide.md"
-    with open(file_path, "r", encoding="utf-8") as f:
-        return f.read()
-
 
 def create_litellm_client() -> Callable:
     """LiteLLM completion client를 생성합니다."""
@@ -59,36 +68,21 @@ def remove_markdown_code_block(content: str) -> str:
     return content.strip()
 
 
-def convert_to_marp_slides(client: Callable, text: str, marp_guide: str) -> str:
+def convert_to_marp_slides(client: Callable, text: str) -> str:
     """LiteLLM completion을 이용해 텍스트를 Marp 형태의 슬라이드로 변환하고 결과를 문자열로 반환합니다."""
     response = client(
         model="openai/solar-pro2-250909",
         messages=[
             {
                 "role": "system",
-                "content": f"""
-                당신은 텍스트를 Marp 형태의 프레젠테이션 슬라이드로 변환하는 전문가입니다.
-
-                아래는 Marp 마크다운 규격과 사용 가이드입니다:
-
-                {marp_guide}
-
-                위 Marp 규격을 참고하여, 사용자가 제공한 텍스트를 Marp 형태의 마크다운 슬라이드로 변환해주세요.
-
-                요구사항:
-                1. Frontmatter에 marp: true, theme, paginate 등을 설정하세요.
-                2. 슬라이드는 --- 로 구분하세요.
-                3. 내용을 논리적으로 구조화하여 여러 슬라이드로 나누세요.
-                4. 각 슬라이드는 명확한 제목과 핵심 내용을 포함해야 합니다.
-                5. 필요한 경우 코드 블록, 리스트, 표 등을 활용하세요.
-                6. 순수 Marp 마크다운만 반환하고, 다른 설명은 포함하지 마세요.
-                """
+                "content": SYSTEM_PROMPT,
             },
             {
                 "role": "user",
                 "content": f"다음 텍스트를 Marp 슬라이드로 변환해주세요:\n\n{text}"
             }
-        ]
+        ],
+        max_completion_tokens=16000,
     )
     return response.choices[0].message.content
 
@@ -97,19 +91,16 @@ def main() -> None:
     # 1. result.txt 파일 읽기
     text: str = read_result_txt()
 
-    # 2. marp_guide.md 가이드 읽기
-    marp_guide: str = read_marp_guide()
-
-    # 3. LiteLLM 클라이언트 생성
+    # 2. LiteLLM 클라이언트 생성
     client: Callable = create_litellm_client()
 
-    # 4. 텍스트를 Marp 슬라이드로 변환
-    marp_slides: str = convert_to_marp_slides(client, text, marp_guide)
+    # 3. 텍스트를 Marp 슬라이드로 변환
+    marp_slides: str = convert_to_marp_slides(client, text)
 
-    # 5. 마크다운 코드 블록 래퍼 제거 (```markdown ... ``` 형태인 경우)
+    # 4. 마크다운 코드 블록 래퍼 제거 (```markdown ... ``` 형태인 경우)
     marp_slides = remove_markdown_code_block(marp_slides)
 
-    # 6. 결과를 result/result_marp.md에 저장
+    # 5. 결과를 result/result_marp.md에 저장
     output_file: str = "result/result_marp.md"
     output_path: Path = Path(output_file)
     output_path.parent.mkdir(parents=True, exist_ok=True)
