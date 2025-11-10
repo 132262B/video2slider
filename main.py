@@ -16,8 +16,8 @@ def read_result_txt() -> str:
 
 
 def read_marp_guide() -> str:
-    """result/marp.md 파일을 읽어서 Marp 가이드를 반환합니다."""
-    file_path: str = "result/marp.md"
+    """result/marp_guide.md 파일을 읽어서 Marp 가이드를 반환합니다."""
+    file_path: str = "result/marp_guide.md"
     with open(file_path, "r", encoding="utf-8") as f:
         return f.read()
 
@@ -97,7 +97,7 @@ def main() -> None:
     # 1. result.txt 파일 읽기
     text: str = read_result_txt()
 
-    # 2. marp.md 가이드 읽기
+    # 2. marp_guide.md 가이드 읽기
     marp_guide: str = read_marp_guide()
 
     # 3. LiteLLM 클라이언트 생성
