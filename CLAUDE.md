@@ -43,3 +43,19 @@ uv add <package-name>
 # Sync dependencies from pyproject.toml
 uv sync
 ```
+
+## Coding Standards
+
+### Type Hinting
+- **MUST** add type hints to all function definitions
+- Include return type hints for all functions (use `-> None` for functions that don't return a value)
+- Add type hints to function parameters
+- Add type hints to variables where beneficial for clarity
+- Use appropriate types from `typing` module when needed (e.g., `Callable`, `Optional`, `List`, `Dict`)
+
+Example:
+```python
+def process_data(text: str, max_length: int) -> str:
+    result: str = text[:max_length]
+    return result
+```
