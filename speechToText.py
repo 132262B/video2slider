@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 import gdown
 from moviepy import VideoFileClip
 
-GOOGLE_DRIVE_URL = "https://drive.google.com/file/d/1u707bInWcLn8-t2M-rU8Xe19uDlQEXmq/view?usp=drive_link"
+GOOGLE_DRIVE_URL = "https://drive.google.com/file/d/1GmJeV25_6yZJL0UA6nBHMyaeULbCZMj1/view?usp=drive_link"
 
 def download_from_gdrive(gdrive_url: str) -> bytes:
     print(f"Google Drive에서 파일 다운로드 중...")
@@ -39,7 +39,7 @@ def convert_mp4_to_mp3(video_bytes: bytes) -> bytes:
         video = VideoFileClip(input_path)
         video.audio.write_audiofile(
             output_path,
-            ffmpeg_params=["-ac", "2", "-b:a", "192k"]
+            ffmpeg_params=["-ac", "1", "-ar", "16000", "-b:a", "96k"]
         )
         video.close()
 
