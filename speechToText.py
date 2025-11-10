@@ -6,45 +6,36 @@ from dotenv import load_dotenv
 import gdown
 from moviepy import VideoFileClip
 
-# Google Drive URL constant
 GOOGLE_DRIVE_URL = "https://drive.google.com/file/d/1u707bInWcLn8-t2M-rU8Xe19uDlQEXmq/view?usp=drive_link"
 
-
 def download_from_gdrive(gdrive_url: str) -> bytes:
-    print(f"Downloading file from Google Drive...")
+    print(f"Google Drive에서 파일 다운로드 중...")
 
-    # Create temporary directory for download
     with tempfile.TemporaryDirectory() as temp_dir:
-        # Specify output file path explicitly
         output_path = os.path.join(temp_dir, "downloaded_video.mp4")
 
-        # Download file using gdown
         output_file = gdown.download(gdrive_url, output=output_path, fuzzy=True)
 
         if not output_file:
-            raise Exception("Failed to download file from Google Drive")
+            raise Exception("Google Drive에서 파일 다운로드 실패")
 
-        # Read file as bytes
         with open(output_file, "rb") as f:
             file_bytes = f.read()
 
-        print(f"File downloaded: {len(file_bytes)} bytes")
+        print(f"파일 다운로드 완료: {len(file_bytes)} bytes")
         return file_bytes
 
 
 def convert_mp4_to_mp3(video_bytes: bytes) -> bytes:
-    print(f"Converting video to MP3...")
+    print(f"비디오를 MP3로 변환 중...")
 
-    # Use temporary directory for conversion (moviepy requires file paths)
     with tempfile.TemporaryDirectory() as temp_dir:
         input_path = os.path.join(temp_dir, "input.mp4")
         output_path = os.path.join(temp_dir, "output.mp3")
 
-        # Write video bytes to temporary file
         with open(input_path, "wb") as f:
             f.write(video_bytes)
 
-        # Convert to MP3 with high quality audio settings
         video = VideoFileClip(input_path)
         video.audio.write_audiofile(
             output_path,
@@ -52,66 +43,58 @@ def convert_mp4_to_mp3(video_bytes: bytes) -> bytes:
         )
         video.close()
 
-        # Read the MP3 file as bytes
         with open(output_path, "rb") as f:
             audio_bytes = f.read()
 
-        print(f"Conversion complete: {len(audio_bytes)} bytes")
+        print(f"변환 완료: {len(audio_bytes)} bytes")
         return audio_bytes
 
 
 def create_groq_client() -> Groq:
-    # Load environment variables from .env file
     load_dotenv()
 
-    # Get API key from environment
     api_key = os.getenv("GROQ_API_KEY")
     if not api_key:
-        raise ValueError("GROQ_API_KEY not found in environment variables. Please set it in .env file.")
+        raise ValueError("GROQ_API_KEY가 환경 변수에 없습니다. .env 파일에 설정해주세요.")
 
-    # Initialize and return Groq client
     return Groq(api_key=api_key)
 
 
 def transcribe_audio(client: Groq, audio_bytes: bytes) -> str:
-    print(f"Transcribing audio...")
+    print(f"오디오 전사 중...")
 
-    # Transcribe the audio using bytes (filename is required by API but can be any value)
+    # 바이트를 사용하여 오디오 전사 (파일명은 API에서 필요하지만 임의의 값이 가능)
     transcription = client.audio.transcriptions.create(
         file=("audio.mp3", audio_bytes),
         prompt="한국어를 기본으로 분석하되 한국어로 적지 않아도 되는 영어 단어는 영어로 표현해주세요.",
         model="whisper-large-v3-turbo",
         response_format="verbose_json",
-        language="ko",  # Change this if needed
+        language="ko",  # 필요시 변경
         temperature=0.0
     )
 
-    # Extract the transcribed text
+    # 전사된 텍스트 추출
     transcribed_text = transcription.text
-    print("Transcription complete")
+    print("전사 완료")
 
     return transcribed_text
 
 
 def main():
-    """
-    Main function to run the speech-to-text transcription workflow.
-    All processing is done in memory with bytes, no permanent file storage.
-    """
     try:
-        # 1. Download file from Google Drive as bytes
+        # 1. Google Drive에서 파일을 바이트로 다운로드
         video_bytes = download_from_gdrive(GOOGLE_DRIVE_URL)
 
-        # 2. Convert MP4 to MP3 and get audio bytes
+        # 2. MP4를 MP3로 변환하고 오디오 바이트 가져오기
         audio_bytes = convert_mp4_to_mp3(video_bytes)
 
-        # 3. Create Groq client
+        # 3. Groq 클라이언트 생성
         client = create_groq_client()
 
-        # 4. Transcribe audio using Groq
+        # 4. Groq를 사용하여 오디오 전사
         transcribed_text = transcribe_audio(client, audio_bytes)
 
-        # 5. Save transcription to result.txt
+        # 5. 전사 결과를 result.txt에 저장
         output_file = "result/result.txt"
         output_path = Path(output_file)
         output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -119,11 +102,11 @@ def main():
         with open(output_file, "w", encoding="utf-8") as f:
             f.write(transcribed_text)
 
-        print(f"\nTranscription saved to: {output_file}")
-        print(f"\nTranscribed text:\n{transcribed_text}")
+        print(f"\n전사 결과 저장 완료: {output_file}")
+        print(f"\n전사된 텍스트:\n{transcribed_text}")
 
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"오류: {e}")
         import sys
         sys.exit(1)
 
