@@ -6,9 +6,20 @@ from dotenv import load_dotenv
 import gdown
 from moviepy import VideoFileClip
 import json
+import hashlib
+import time
 from typing import Dict, Any
 
 GOOGLE_DRIVE_URL = "https://drive.google.com/file/d/1GmJeV25_6yZJL0UA6nBHMyaeULbCZMj1/view?usp=drive_link"
+
+
+def generate_hash_folder_name() -> str:
+    """현재 시간을 기반으로 10자리 해시값 생성"""
+    timestamp = str(time.time()).encode('utf-8')
+    hash_object = hashlib.sha256(timestamp)
+    hash_hex = hash_object.hexdigest()
+    return hash_hex[:10]
+
 
 def download_from_gdrive(gdrive_url: str) -> bytes:
     print(f"Google Drive에서 파일 다운로드 중...")
@@ -107,27 +118,36 @@ def transcribe_audio(client: Groq, audio_bytes: bytes) -> Dict[str, Any]:
 
 
 def main() -> None:
+    # 0. 해시 기반 출력 폴더 생성
+    hash_folder = generate_hash_folder_name()
+    output_dir = Path("result") / hash_folder
+    output_dir.mkdir(parents=True, exist_ok=True)
+    print(f"출력 폴더 생성: {output_dir}")
+
     # 1. Google Drive에서 파일을 바이트로 다운로드
     video_bytes = download_from_gdrive(GOOGLE_DRIVE_URL)
 
-    # 2. MP4를 MP3로 변환하고 오디오 바이트 가져오기
+    # 2. 다운로드한 비디오 파일 저장
+    video_file = output_dir / "video.mp4"
+    with open(video_file, "wb") as f:
+        f.write(video_bytes)
+    print(f"비디오 파일 저장 완료: {video_file}")
+
+    # 3. MP4를 MP3로 변환하고 오디오 바이트 가져오기
     audio_bytes = convert_mp4_to_mp3(video_bytes)
 
-    # 3. Groq 클라이언트 생성
+    # 4. Groq 클라이언트 생성
     client = create_groq_client()
 
-    # 4. Groq를 사용하여 오디오 전사
+    # 5. Groq를 사용하여 오디오 전사
     transcription_result = transcribe_audio(client, audio_bytes)
 
-    # 5. 전사 결과를 result.json에 저장
-    output_file = "result/result.json"
-    output_path = Path(output_file)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-
+    # 6. 전사 결과를 result.json에 저장
+    output_file = output_dir / "result.json"
     with open(output_file, "w", encoding="utf-8") as f:
         json.dump(transcription_result, f, ensure_ascii=False, indent=2)
 
-    print(f"\n전사 결과 저장 완료: {output_file}")
+    print(f"전사 결과 저장 완료: {output_file}")
 
 
 if __name__ == "__main__":
