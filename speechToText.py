@@ -117,7 +117,7 @@ def transcribe_audio(client: Groq, audio_bytes: bytes) -> Dict[str, Any]:
     return result_dict
 
 
-def main() -> None:
+def main() -> str:
     # 0. 해시 기반 출력 폴더 생성
     hash_folder = generate_hash_folder_name()
     output_dir = Path("result") / hash_folder
@@ -148,6 +148,9 @@ def main() -> None:
         json.dump(transcription_result, f, ensure_ascii=False, indent=2)
 
     print(f"전사 결과 저장 완료: {output_file}")
+
+    # 7. 생성된 해시 폴더 이름 반환
+    return hash_folder
 
 
 if __name__ == "__main__":
