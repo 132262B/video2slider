@@ -5,6 +5,8 @@ from groq import Groq
 from dotenv import load_dotenv
 import gdown
 from moviepy import VideoFileClip
+import json
+from typing import Dict, Any
 
 GOOGLE_DRIVE_URL = "https://drive.google.com/file/d/1GmJeV25_6yZJL0UA6nBHMyaeULbCZMj1/view?usp=drive_link"
 
@@ -60,7 +62,7 @@ def create_groq_client() -> Groq:
     return Groq(api_key=api_key)
 
 
-def transcribe_audio(client: Groq, audio_bytes: bytes) -> str:
+def transcribe_audio(client: Groq, audio_bytes: bytes) -> Dict[str, Any]:
     print(f"오디오 전사 중...")
 
     # 바이트를 사용하여 오디오 전사 (파일명은 API에서 필요하지만 임의의 값이 가능)
@@ -73,42 +75,59 @@ def transcribe_audio(client: Groq, audio_bytes: bytes) -> str:
         temperature=0.0
     )
 
-    # 전사된 텍스트 추출
-    transcribed_text = transcription.text
+    # transcription 객체를 딕셔너리로 변환 (Pydantic 모델)
+    if hasattr(transcription, 'model_dump'):
+        result_dict = transcription.model_dump()
+    elif hasattr(transcription, 'dict'):
+        result_dict = transcription.dict()
+    else:
+        # 직접 속성 접근으로 변환
+        result_dict = {
+            # "text": transcription.text,
+            "duration": transcription.duration,
+            "segments": transcription.segments
+        }
+
+    # 최상위 레벨에서 불필요한 필드 제거
+    top_level_fields_to_remove = ["text", "task", "language"]
+    for field in top_level_fields_to_remove:
+        if field in result_dict:
+            del result_dict[field]
+
+    # segments에서 불필요한 필드 제거
+    segment_fields_to_remove = ["tokens", "temperature", "avg_logprob", "compression_ratio", "no_speech_prob", "id", "seek"]
+    if "segments" in result_dict and result_dict["segments"]:
+        for segment in result_dict["segments"]:
+            for field in segment_fields_to_remove:
+                if field in segment:
+                    del segment[field]
+
     print("전사 완료")
+    return result_dict
 
-    return transcribed_text
 
+def main() -> None:
+    # 1. Google Drive에서 파일을 바이트로 다운로드
+    video_bytes = download_from_gdrive(GOOGLE_DRIVE_URL)
 
-def main():
-    try:
-        # 1. Google Drive에서 파일을 바이트로 다운로드
-        video_bytes = download_from_gdrive(GOOGLE_DRIVE_URL)
+    # 2. MP4를 MP3로 변환하고 오디오 바이트 가져오기
+    audio_bytes = convert_mp4_to_mp3(video_bytes)
 
-        # 2. MP4를 MP3로 변환하고 오디오 바이트 가져오기
-        audio_bytes = convert_mp4_to_mp3(video_bytes)
+    # 3. Groq 클라이언트 생성
+    client = create_groq_client()
 
-        # 3. Groq 클라이언트 생성
-        client = create_groq_client()
+    # 4. Groq를 사용하여 오디오 전사
+    transcription_result = transcribe_audio(client, audio_bytes)
 
-        # 4. Groq를 사용하여 오디오 전사
-        transcribed_text = transcribe_audio(client, audio_bytes)
+    # 5. 전사 결과를 result.json에 저장
+    output_file = "result/result.json"
+    output_path = Path(output_file)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # 5. 전사 결과를 result.txt에 저장
-        output_file = "result/result.txt"
-        output_path = Path(output_file)
-        output_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_file, "w", encoding="utf-8") as f:
+        json.dump(transcription_result, f, ensure_ascii=False, indent=2)
 
-        with open(output_file, "w", encoding="utf-8") as f:
-            f.write(transcribed_text)
-
-        print(f"\n전사 결과 저장 완료: {output_file}")
-        print(f"\n전사된 텍스트:\n{transcribed_text}")
-
-    except Exception as e:
-        print(f"오류: {e}")
-        import sys
-        sys.exit(1)
+    print(f"\n전사 결과 저장 완료: {output_file}")
 
 
 if __name__ == "__main__":
