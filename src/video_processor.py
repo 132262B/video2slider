@@ -3,14 +3,12 @@ from pathlib import Path
 from typing import Callable, Optional, List, Dict, Any
 from moviepy import VideoFileClip
 from PIL import Image
-from llm import create_litellm_client, summarize_transcript
+from src.llm import create_litellm_client, summarize_transcript
 
 # 기본 해시 폴더 (main 인자가 없을 때 사용)
 DEFAULT_HASH_FOLDER = "9ba432c126"
 
-
 def read_result_json(hash_folder: str) -> dict:
-    """result/{hash_folder}/result.json 파일을 읽어서 딕셔너리로 반환합니다."""
     file_path: Path = Path("result") / hash_folder / "result.json"
     with open(file_path, "r", encoding="utf-8") as f:
         return json.load(f)
