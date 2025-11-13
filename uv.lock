@@ -1433,6 +1433,7 @@ dependencies = [
     { name = "groq" },
     { name = "litellm" },
     { name = "moviepy" },
+    { name = "pillow" },
     { name = "python-dotenv" },
 ]
 
@@ -1442,6 +1443,7 @@ requires-dist = [
     { name = "groq", specifier = ">=0.33.0" },
     { name = "litellm", specifier = ">=1.79.3" },
     { name = "moviepy", specifier = ">=2.2.1" },
+    { name = "pillow", specifier = ">=11.3.0" },
     { name = "python-dotenv", specifier = ">=1.2.1" },
 ]
 
