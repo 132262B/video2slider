@@ -4,7 +4,7 @@ from functools import partial
 from typing import Callable, Dict, Any, List
 from dotenv import load_dotenv
 from litellm import completion
-from src.utils import extract_json_from_response
+from .utils import extract_json_from_response
 
 
 def create_litellm_client() -> Callable:

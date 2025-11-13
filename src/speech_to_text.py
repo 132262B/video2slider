@@ -10,7 +10,7 @@ import hashlib
 import time
 from typing import Dict, Any
 
-GOOGLE_DRIVE_URL = "https://drive.google.com/file/d/1GmJeV25_6yZJL0UA6nBHMyaeULbCZMj1/view?usp=drive_link"
+GOOGLE_DRIVE_URL = "https://drive.google.com/file/d/1hI3HWXEp61wPy_w2LVQoNLTrXhkKSjBS/view?usp=drive_link"
 
 
 def generate_hash_folder_name() -> str:
