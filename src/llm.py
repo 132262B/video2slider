@@ -4,7 +4,7 @@ from functools import partial
 from typing import Callable, Dict, Any, List
 from dotenv import load_dotenv
 from litellm import completion
-from .utils import extract_json_from_response
+from utils import extract_json_from_response
 
 
 def create_litellm_client() -> Callable:
@@ -49,7 +49,6 @@ def summarize_transcript(client: Callable, segments: List[Dict[str, Any]]) -> Li
 # 요구사항
 - 전체 segment를 읽고 나눠진 문장을 합쳐 섹션별로 정리하여야 합니다..
 - start와 end는 기존 segment를 참조해서 문장이 시작되는 부분, 문장이 끝나는 부분을 계산하여 넣어주세요.
-- 불필요한 반복이나 군더더기는 제거하세요
 - 원본의 의미를 왜곡하지 마세요
 - JSON 형태로 반환하세요
 """
@@ -73,6 +72,9 @@ JSON 형태로 반환하세요:
             {"role": "user", "content": user_prompt}
         ],
         max_completion_tokens=16000,
+        temperature=0.3,
+        reasoning_effort="high",
+        allowed_openai_params=["reasoning_effort"]
     )
 
     # 응답에서 JSON 추출 및 파싱

@@ -1,12 +1,13 @@
 import json
+import sys
 from pathlib import Path
 from typing import Callable, Optional, List, Dict, Any
 from moviepy import VideoFileClip
 from PIL import Image
-from .llm import create_litellm_client, summarize_transcript
+from llm import create_litellm_client, summarize_transcript
 
 # 기본 해시 폴더 (main 인자가 없을 때 사용)
-DEFAULT_HASH_FOLDER = "bbadefc08c"
+DEFAULT_HASH_FOLDER = "8f0d820325"
 
 def read_result_json(hash_folder: str) -> dict:
     file_path: Path = Path("result") / hash_folder / "result.json"
@@ -45,7 +46,7 @@ def extract_frames_from_video(
         text: str = segment["text"]
 
         # start와 end의 중간 지점에서 프레임 추출
-        capture_time: float = (start + end) / 2.0
+        capture_time: float = start
 
         # 비디오 길이를 초과하지 않도록 조정
         if capture_time > video.duration:
